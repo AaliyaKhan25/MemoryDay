@@ -29,13 +29,14 @@ MODEL = os.environ.get("OLLAMA_MODEL", "gemma3:4b")
 OLLAMA = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434").rstrip("/")
 if not OLLAMA.startswith("http"):
     OLLAMA = "http://" + OLLAMA
-PORT = int(os.environ.get("PORT", "8000"))
-MAX_BODY = 300_000
-MAX_IMAGE_BODY = 4_000_000
+DEFAULT_PORT = int(os.environ.get("PORT", "8000"))
+MAX_BODY = 500_000
+MAX_IMAGE_BODY = 6_000_000
 
 LANGS = {
     "en": "English",
-    "hi": "Hindi in Devanagari script, using simple everyday words",
+    "es": "Spanish (Español), warm, respectful, and dignified in the authentic Día de los Muertos memorial tradition",
+    "hi": "Hindi in Devanagari script, using warm, respectful and emotional everyday words",
 }
 
 STORY_SYSTEM = """You help a family write a short remembrance of someone they love who has died, for a Dia de los Muertos altar.
@@ -71,14 +72,51 @@ Rules:
 - 70 to 110 words, one paragraph. No heading, no list, no cliches such as "journey", "tapestry" or "legacy".
 - Reply with the note only."""
 
-DESCRIBE_SYSTEM = """You write a caption for a photograph in a family album.
+DESCRIBE_SYSTEM = """You write an evocative, realistic, and touching caption for a photograph in a Día de los Muertos (Day of the Dead) family memorial book.
+
+CORE DIRECTIVE: The person in the photograph is the PRIMARY SUBJECT, focal point, and main element of the image.
+Rules:
+- Treat the person as the main element: describe their posture, expression, smile, gaze, gesture, activity, or what they are holding or wearing.
+- The environment and surrounding elements are the supportive setting that highlights their character, presence, and life story.
+- If the family gave you their name or relationship, refer to them naturally (e.g. "Grandmother Elena smiling warmly in her kitchen...", or "Nani proudly tending to her mango saplings...").
+- Ground the description in what is genuinely visible. Never write cold, detached object lists ("A person next to a plate").
+- Write 1 to 2 warm, realistic sentences (around 20 to 35 words). Dignified, heartfelt, and lifelike.
+- Reply with the caption text only, without quotes or preface."""
+
+CALAVERITA_SYSTEM = """You write an authentic, affectionate Calaverita Literaria (or memorial poetic verse) honoring a loved one for Día de los Muertos.
 
 Rules:
-- Write ONE plain sentence of at most 20 words.
-- Say only what you can actually see: the setting, the activity, objects, clothing.
-- Do not guess who anyone is, their age, their relationship, their feelings, or where or when the photo was taken.
-- If the photo is too unclear to describe, say so briefly.
-- Reply with the sentence only."""
+- In Mexican tradition, a Calaverita Literaria is a rhyming, rhythmic folk poem honoring someone's joyful quirks, passions, favorite food, or laughter, saying that even La Catrina (Death) paused to admire them.
+- Use only facts from the family (name, relation, favorite food, song, personality traits).
+- 4 to 8 lines in rhythmic stanzas.
+- Celebratory, loving, and respectful—celebrating life and memory.
+- Reply with the verse only."""
+
+BLESSING_SYSTEM = """You write a warm, poignant Día de los Muertos ofrenda dedication and spirit welcome for a family memorial book.
+
+Rules:
+- Honor their spirit returning home along the golden trail of cempasúchil marigold petals.
+- Bless the offerings placed for them: the warm candle light, pan de muerto, pure water, and salt.
+- 60 to 100 words in one touching paragraph.
+- Write in warm family third-person or collective "we".
+- Reply with the dedication paragraph only."""
+
+RECIPE_SYSTEM = """You write an evocative heirloom culinary remembrance and recipe story for a Día de los Muertos memorial book.
+
+Rules:
+- Focus on the signature dish their family remembers them cooking or loving.
+- Evoke the sensory aromas: the roasting spices, simmering broths, sweetness of canela (cinnamon), vanilla, or fresh herbs.
+- Highlight the love and family ritual poured into preparing this dish.
+- 80 to 130 words in warm, poetic prose.
+- Reply with the recipe remembrance only."""
+
+LETTER_SYSTEM = """You write a gentle, poetic Día de los Muertos ancestral blessing in response to a family member's letter sent across the marigold bridge with copal smoke.
+
+Rules:
+- Speak from the warm spirit of the altar and ancestral love: reminding the family that love never dies, that every memory keeps the flame alive, and that their words are heard across the stars.
+- Do NOT impersonate the dead as a ghost; speak as the gentle wisdom of the Ofrenda honoring the eternal bond.
+- 70 to 110 words in comforting, heartfelt language.
+- Reply with the blessing only."""
 
 
 def clip(value, limit=1500):
@@ -178,7 +216,7 @@ def chapter_prompt(person, moment):
         f"This page is about: {clip(moment.get('title'), 80)}",
         f"When: {clip(moment.get('when'), 40)}",
         f"Where: {clip(moment.get('where'), 80)}",
-        f"Caption under the photo: {clip(moment.get('caption'), 120)}",
+        f"Caption under the photo: {clip(moment.get('caption'), 140)}",
         "What the family told us:",
         clip(moment.get("notes"), 900),
     ]
@@ -192,20 +230,98 @@ def foreword_prompt(person, moments):
         "",
         "Moments in the book:",
     ]
-    for m in moments[:30]:
+    for m in moments[:40]:
         if isinstance(m, dict):
             lines.append(f"- {clip(m.get('title'), 80)} ({clip(m.get('when'), 40)})")
     return "\n".join(lines)
 
 
-ROUTES = {"/api/story", "/api/ask", "/api/chapter", "/api/foreword", "/api/describe"}
+def describe_prompt(body):
+    person = body.get("person") or {}
+    name = clip(body.get("person_name") or person.get("name"), 60)
+    rel = clip(body.get("person_rel") or person.get("rel"), 80)
+    title = clip(body.get("title") or (body.get("moment") or {}).get("title"), 80)
+    notes = clip(body.get("notes") or (body.get("moment") or {}).get("notes"), 400)
+    when = clip(body.get("when") or (body.get("moment") or {}).get("when"), 40)
+    where = clip(body.get("where") or (body.get("moment") or {}).get("where"), 60)
+
+    lines = ["Write a realistic memorial caption for this photograph with the person as the main element."]
+    if name:
+        lines.append(f"Person honored: {name}" + (f" ({rel})" if rel else ""))
+        lines.append(f"Focal rule: {name} is the primary subject in the frame. Focus on their expression, gaze, posture, and presence.")
+    if title:
+        lines.append(f"Moment title: {title}")
+    meta = " · ".join([m for m in (when, where) if m])
+    if meta:
+        lines.append(f"When and where: {meta}")
+    if notes:
+        lines.append(f"Family remembrance notes: {notes}")
+    lines.append("Describe what makes them the living heart of this scene.")
+    return "\n".join(lines)
+
+
+def calaverita_prompt(person):
+    lines = person_lines(person) + [
+        "",
+        "What the family remembers:",
+        clip(person.get("story"), 600),
+    ]
+    return "\n".join(lines)
+
+
+def blessing_prompt(person, offerings=None):
+    lines = person_lines(person)
+    if offerings and isinstance(offerings, list):
+        lines.append(f"Offerings on their altar: {', '.join([str(o) for o in offerings])}")
+    lines.append("Write a touching ofrenda dedication welcoming their spirit home across the marigolds.")
+    return "\n".join(lines)
+
+
+def recipe_prompt(person, dish_notes=""):
+    lines = person_lines(person) + [
+        f"The signature dish they cooked or loved: {clip(person.get('food'), 100)}",
+        f"Family notes about their cooking / ritual: {clip(dish_notes, 400)}",
+    ]
+    return "\n".join(lines)
+
+
+def letter_prompt(person, letter_text):
+    lines = person_lines(person) + [
+        "",
+        "Letter written to them by their loving family:",
+        clip(letter_text, 1200),
+    ]
+    return "\n".join(lines)
+
+
+ROUTES = {
+    "/api/story",
+    "/api/ask",
+    "/api/chapter",
+    "/api/foreword",
+    "/api/describe",
+    "/api/calaverita",
+    "/api/blessing",
+    "/api/recipe",
+    "/api/letter",
+}
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "Ofrenda/1.1"
+    server_version = "Ofrenda/2.0"
 
     def log_message(self, fmt, *args):
         print("  " + fmt % args)
+
+    def send_cors_headers(self):
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.send_cors_headers()
+        self.end_headers()
 
     def send_json(self, status, payload):
         raw = json.dumps(payload).encode()
@@ -213,6 +329,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(raw)))
         self.send_header("Cache-Control", "no-store")
+        self.send_cors_headers()
         self.end_headers()
         self.wfile.write(raw)
 
@@ -226,6 +343,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(raw)))
+            self.send_cors_headers()
             self.end_headers()
             self.wfile.write(raw)
         elif path == "/api/health":
@@ -269,7 +387,7 @@ class Handler(BaseHTTPRequestHandler):
             person, moment = body.get("person"), body.get("moment")
             if not isinstance(person, dict) or not isinstance(moment, dict):
                 return self.send_json(400, {"error": "Could not read that request."})
-            if not (clip(moment.get("title"), 80) or clip(moment.get("notes"), 900) or clip(moment.get("caption"), 120)):
+            if not (clip(moment.get("title"), 80) or clip(moment.get("notes"), 900) or clip(moment.get("caption"), 140)):
                 return self.send_json(400, {"error": "Add what they were doing or a few lines about this photo first."})
             system = CHAPTER_SYSTEM + "\n" + lang_line(lang)
             user = chapter_prompt(person, moment)
@@ -281,16 +399,51 @@ class Handler(BaseHTTPRequestHandler):
             system = FOREWORD_SYSTEM + "\n" + lang_line(lang)
             user = foreword_prompt(person, moments)
 
+        elif path == "/api/calaverita":
+            person = body.get("person")
+            if not isinstance(person, dict) or not clip(person.get("name")):
+                return self.send_json(400, {"error": "Add the person's name first."})
+            system = CALAVERITA_SYSTEM + "\n" + lang_line(lang)
+            user = calaverita_prompt(person)
+            temperature = 0.7
+
+        elif path == "/api/blessing":
+            person = body.get("person")
+            offerings = body.get("offerings")
+            if not isinstance(person, dict) or not clip(person.get("name")):
+                return self.send_json(400, {"error": "Add the person's name first."})
+            system = BLESSING_SYSTEM + "\n" + lang_line(lang)
+            user = blessing_prompt(person, offerings)
+            temperature = 0.5
+
+        elif path == "/api/recipe":
+            person = body.get("person")
+            notes = body.get("notes") or ""
+            if not isinstance(person, dict) or not clip(person.get("name")):
+                return self.send_json(400, {"error": "Add the person's name first."})
+            system = RECIPE_SYSTEM + "\n" + lang_line(lang)
+            user = recipe_prompt(person, notes)
+            temperature = 0.5
+
+        elif path == "/api/letter":
+            person = body.get("person")
+            letter_text = body.get("letter") or ""
+            if not isinstance(person, dict) or not clip(letter_text):
+                return self.send_json(400, {"error": "Write a letter first."})
+            system = LETTER_SYSTEM + "\n" + lang_line(lang)
+            user = letter_prompt(person, letter_text)
+            temperature = 0.5
+
         else:  # /api/describe
-            image = clip(body.get("image"), 3_000_000)
+            image = clip(body.get("image"), 4_000_000)
             if "base64," in image:
                 image = image.split("base64,", 1)[1]
             if len(image) < 100:
                 return self.send_json(400, {"error": "Choose a photo first."})
             images = [image]
-            temperature = 0.2
+            temperature = 0.35
             system = DESCRIBE_SYSTEM + "\n" + lang_line(lang)
-            user = "Write the caption for this photograph."
+            user = describe_prompt(body)
 
         try:
             text = chat(system, user, images=images, temperature=temperature)
@@ -314,11 +467,44 @@ class Handler(BaseHTTPRequestHandler):
         self.send_json(200, {"text": text})
 
 
-if __name__ == "__main__":
-    server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
-    print(f"Our Ofrenda is lit: http://localhost:{PORT}")
-    print(f"Model: {MODEL} via Ollama at {OLLAMA}")
+def start_server():
+    ThreadingHTTPServer.allow_reuse_address = True
+    port_candidates = [DEFAULT_PORT]
+    if DEFAULT_PORT != 8080:
+        port_candidates.extend([8080, 8088, 8888, 5000])
+
+    srv = None
+    chosen_port = None
+    for p in port_candidates:
+        try:
+            srv = ThreadingHTTPServer(("0.0.0.0", p), Handler)
+            chosen_port = p
+            break
+        except OSError:
+            try:
+                srv = ThreadingHTTPServer(("127.0.0.1", p), Handler)
+                chosen_port = p
+                break
+            except OSError:
+                continue
+
+    if not srv:
+        print("ERROR: Could not bind to any available port.")
+        return
+
+    print("\n" + "=" * 60)
+    print("  🌼 Our Ofrenda (MemoryDay) is lit and running! 🌼")
+    print("=" * 60)
+    print(f"  👉 http://localhost:{chosen_port}")
+    print(f"     or http://127.0.0.1:{chosen_port}")
+    print("=" * 60)
+    print(f"  Local AI: {MODEL} via Ollama at {OLLAMA}")
+    print("  (Press Ctrl+C to stop the server)\n")
     try:
-        server.serve_forever()
+        srv.serve_forever()
     except KeyboardInterrupt:
         print("\nCandles out. Goodnight.")
+
+
+if __name__ == "__main__":
+    start_server()

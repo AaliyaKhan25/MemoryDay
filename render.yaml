@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: memoryday-ofrenda
+    runtime: python
+    buildCommand: ""
+    startCommand: python server.py
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9

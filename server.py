@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
-"""Our Ofrenda: serves the altar page and talks to a local open-weight model through Ollama.
+"""Our Ofrenda: serves the altar page and talks to a local open-weight model through Ollama
+or cloud Gemini API if GEMINI_API_KEY is configured.
 
-Everything stays on this computer. The page talks to this server on 127.0.0.1,
-and this server talks to Ollama on 127.0.0.1. No cloud API, no account, no key.
+Runs anywhere: locally on 127.0.0.1 or deployed to Render / cloud hosts.
 
-Run:
-    ollama pull gemma3:4b
+Run locally:
     python server.py
 Then open http://localhost:8000
 
 Settings (environment variables):
-    OLLAMA_MODEL   model to use            (default: gemma3:4b)
-    OLLAMA_HOST    where Ollama listens    (default: http://127.0.0.1:11434)
-    PORT           port for this page      (default: 8000)
-
-The photo caption feature needs a model that can read images (gemma3:4b and larger can).
+    PORT              port for this web service (Render injects this automatically)
+    GEMINI_API_KEY    optional Google Gemini API key for cloud inference on Render
+    OLLAMA_MODEL      local model to use (default: gemma3:4b)
+    OLLAMA_HOST       where Ollama listens (default: http://127.0.0.1:11434)
 """
 import json
 import os
@@ -29,7 +27,8 @@ MODEL = os.environ.get("OLLAMA_MODEL", "gemma3:4b")
 OLLAMA = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434").rstrip("/")
 if not OLLAMA.startswith("http"):
     OLLAMA = "http://" + OLLAMA
-DEFAULT_PORT = int(os.environ.get("PORT", "8000"))
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
+
 MAX_BODY = 500_000
 MAX_IMAGE_BODY = 6_000_000
 
@@ -127,6 +126,35 @@ def lang_line(code):
     return "Write in " + LANGS.get(code, LANGS["en"]) + "."
 
 
+def gemini_request(system, user, images=None, temperature=0.5):
+    parts = [{"text": user}]
+    if images:
+        for img in images:
+            raw_b64 = img.split("base64,", 1)[1] if "base64," in img else img
+            parts.append({
+                "inline_data": {
+                    "mime_type": "image/jpeg",
+                    "data": raw_b64
+                }
+            })
+    payload = {
+        "system_instruction": {"parts": [{"text": system}]},
+        "contents": [{"role": "user", "parts": parts}],
+        "generationConfig": {"temperature": temperature}
+    }
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    data = json.dumps(payload).encode()
+    req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        res = json.loads(resp.read().decode())
+        candidates = res.get("candidates", [])
+        if candidates:
+            c_parts = candidates[0].get("content", {}).get("parts", [])
+            if c_parts:
+                return c_parts[0].get("text", "").strip()
+    return ""
+
+
 def ollama_request(path, payload=None, timeout=240):
     data = json.dumps(payload).encode() if payload is not None else None
     req = urllib.request.Request(
@@ -137,6 +165,14 @@ def ollama_request(path, payload=None, timeout=240):
 
 
 def chat(system, user, images=None, temperature=0.5):
+    if GEMINI_API_KEY:
+        try:
+            txt = gemini_request(system, user, images=images, temperature=temperature)
+            if txt:
+                return txt
+        except Exception as e:
+            print("  [Gemini API Cloud fallback]:", e)
+
     message = {"role": "user", "content": user}
     if images:
         message["images"] = images
@@ -153,6 +189,8 @@ def chat(system, user, images=None, temperature=0.5):
 
 
 def health():
+    if GEMINI_API_KEY:
+        return {"ok": True, "ollama": True, "model": "Gemini 1.5 Flash (Cloud)", "model_ready": True}
     try:
         tags = ollama_request("/api/tags", timeout=2)
     except Exception:
@@ -453,11 +491,11 @@ class Handler(BaseHTTPRequestHandler):
             elif images:
                 msg = f"{MODEL} could not read the photo. Pick a model that can read images, such as gemma3:4b."
             else:
-                msg = f"Ollama returned an error ({err.code})."
+                msg = f"Inference returned an error ({err.code})."
             return self.send_json(502, {"error": msg})
         except (urllib.error.URLError, TimeoutError, ConnectionError):
             return self.send_json(
-                503, {"error": f"Could not reach Ollama at {OLLAMA}. Start it with: ollama serve"}
+                503, {"error": f"Could not reach model server at {OLLAMA}."}
             )
         except Exception:
             return self.send_json(500, {"error": "The model did not answer. Try again."})
@@ -469,36 +507,41 @@ class Handler(BaseHTTPRequestHandler):
 
 def start_server():
     ThreadingHTTPServer.allow_reuse_address = True
-    port_candidates = [DEFAULT_PORT]
-    if DEFAULT_PORT != 8080:
-        port_candidates.extend([8080, 8088, 8888, 5000])
+    port_env = os.environ.get("PORT")
 
-    srv = None
-    chosen_port = None
-    for p in port_candidates:
-        try:
-            srv = ThreadingHTTPServer(("0.0.0.0", p), Handler)
-            chosen_port = p
-            break
-        except OSError:
+    if port_env:
+        # Render / production cloud provides $PORT
+        chosen_port = int(port_env)
+        srv = ThreadingHTTPServer(("0.0.0.0", chosen_port), Handler)
+    else:
+        # Local development port hunting
+        port_candidates = [8000, 8080, 8088, 8888, 5000]
+        srv = None
+        chosen_port = None
+        for p in port_candidates:
             try:
-                srv = ThreadingHTTPServer(("127.0.0.1", p), Handler)
+                srv = ThreadingHTTPServer(("0.0.0.0", p), Handler)
                 chosen_port = p
                 break
             except OSError:
-                continue
-
-    if not srv:
-        print("ERROR: Could not bind to any available port.")
-        return
+                try:
+                    srv = ThreadingHTTPServer(("127.0.0.1", p), Handler)
+                    chosen_port = p
+                    break
+                except OSError:
+                    continue
+        if not srv:
+            print("ERROR: Could not bind to any available port.")
+            return
 
     print("\n" + "=" * 60)
     print("  🌼 Our Ofrenda (MemoryDay) is lit and running! 🌼")
     print("=" * 60)
-    print(f"  👉 http://localhost:{chosen_port}")
-    print(f"     or http://127.0.0.1:{chosen_port}")
+    print(f"  👉 Listening on port {chosen_port}")
+    print(f"     http://localhost:{chosen_port}")
     print("=" * 60)
-    print(f"  Local AI: {MODEL} via Ollama at {OLLAMA}")
+    ai_desc = "Gemini API (Cloud)" if GEMINI_API_KEY else f"{MODEL} via Ollama at {OLLAMA}"
+    print(f"  Local/Cloud AI: {ai_desc}")
     print("  (Press Ctrl+C to stop the server)\n")
     try:
         srv.serve_forever()

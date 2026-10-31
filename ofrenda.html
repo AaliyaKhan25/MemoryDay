@@ -1,0 +1,1090 @@
+<title>Our Ofrenda</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&family=Hanken+Grotesk:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&family=Noto+Serif+Devanagari:wght@400;600&display=swap">
+<style>
+/* Layout: a candlelit stepped altar (narrow shelf on top, wide shelf below), memory card opens over it, add-a-candle form sits beneath. Single dark look by choice. */
+:root {
+  --night: #140d22;
+  --night-2: #1f1433;
+  --cloth: #2c1c46;
+  --marigold: #f5a524;
+  --flame: #ff7a3d;
+  --petal: #e8457c;
+  --teal: #3fb8a8;
+  --bone: #f4ecdf;
+  --muted: #b9abcf;
+  --line: #3d2a5e;
+  --display: "Gloock", Georgia, "Times New Roman", serif;
+  --body: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--night);
+  color: var(--bone);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 56px;
+  overflow-x: hidden;
+}
+#petals { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+.wrap { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; }
+
+/* papel picado banner */
+.banner { display: flex; justify-content: center; gap: 4px; padding-top: 14px; overflow: hidden; }
+.flag {
+  flex: 0 0 auto; width: 54px; height: 62px;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 75% 86%, 50% 100%, 25% 86%, 0 100%);
+  background-color: var(--c);
+  background-image:
+    radial-gradient(circle at 50% 32%, var(--night) 0 5px, transparent 6px),
+    radial-gradient(circle at 25% 66%, var(--night) 0 3px, transparent 4px),
+    radial-gradient(circle at 75% 66%, var(--night) 0 3px, transparent 4px);
+  opacity: .92;
+}
+
+header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 32px; padding: 36px 0 8px; }
+h1 { font-family: var(--display); font-weight: 400; font-size: clamp(2.5rem, 9vw, 4.6rem); line-height: 1; margin: 0; color: var(--marigold); text-wrap: balance; }
+.tagline { margin: 10px 0 0; color: var(--muted); max-width: 34ch; font-size: 1.05rem; }
+.dates { display: grid; gap: 6px; font-size: .9rem; color: var(--muted); max-width: 30ch; min-width: 0; }
+.dates b { color: var(--bone); font-weight: 600; }
+
+/* altar */
+.altar { margin-top: 36px; display: flex; flex-direction: column; align-items: center; gap: 0; }
+.shelf {
+  position: relative; display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end;
+  gap: 18px 14px; width: var(--w, 100%); min-width: 0;
+  padding: 28px 16px 22px;
+  background: linear-gradient(to bottom, rgba(44,28,70,0) 0%, var(--cloth) 100%);
+  border-bottom: 6px solid var(--petal);
+}
+.shelf::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 10px; margin-top: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='10'%3E%3Cpath d='M0 0H16L8 10Z' fill='%23e8457c'/%3E%3C/svg%3E") repeat-x;
+}
+.shelf + .shelf { margin-top: 10px; }
+.shelf:last-child { margin-bottom: 14px; }
+
+.person {
+  appearance: none; border: 0; background: none; color: inherit; font: inherit; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  width: 112px; padding: 6px 4px 8px; border-radius: 10px; text-align: center; min-width: 0;
+}
+.person:hover { background: rgba(245,165,36,.09); }
+.person:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
+
+.candle { position: relative; width: 22px; height: 78px; display: block; }
+.wax { position: absolute; bottom: 0; left: 4px; width: 14px; height: 46px; border-radius: 3px 3px 2px 2px; background: linear-gradient(90deg, #d8cdb9, var(--bone) 45%, #cbbfa8); }
+.wick { position: absolute; bottom: 46px; left: 10px; width: 2px; height: 7px; background: #3b2a1c; }
+.flame {
+  position: absolute; bottom: 52px; left: 5px; width: 12px; height: 22px; display: block;
+  border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%;
+  background: radial-gradient(ellipse at 50% 70%, #fff7cf 0 25%, var(--marigold) 60%, var(--flame) 100%);
+  box-shadow: 0 0 16px 6px rgba(245,165,36,.5), 0 0 40px 12px rgba(255,122,61,.22);
+  transform-origin: 50% 100%;
+  animation: flicker 2.2s ease-in-out infinite alternate; animation-delay: var(--d, 0s);
+}
+@keyframes flicker {
+  0% { transform: scale(1, 1) rotate(-1.5deg); opacity: .95; }
+  35% { transform: scale(.94, 1.08) rotate(1.5deg); opacity: 1; }
+  70% { transform: scale(1.05, .95) rotate(-1deg); opacity: .9; }
+  100% { transform: scale(.97, 1.04) rotate(1deg); opacity: 1; }
+}
+
+.frame {
+  width: 76px; height: 92px; border: 3px solid var(--marigold); border-radius: 40px 40px 6px 6px;
+  overflow: hidden; background: var(--night-2); display: grid; place-items: center;
+  font-family: var(--display); font-size: 1.8rem; color: var(--marigold);
+}
+.frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pname { font-family: var(--display); font-size: 1.05rem; line-height: 1.15; overflow-wrap: anywhere; }
+.prel { font-size: .78rem; color: var(--muted); line-height: 1.25; overflow-wrap: anywhere; }
+.tag { font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; color: var(--teal); }
+
+.legend { margin: 6px 0 0; text-align: center; color: var(--muted); font-size: .85rem; letter-spacing: .02em; }
+
+/* sections */
+section.compose { margin-top: 56px; border-top: 1px solid var(--line); padding-top: 32px; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 28px 40px; }
+h2 { font-family: var(--display); font-weight: 400; font-size: 1.9rem; line-height: 1.1; margin: 0 0 10px; color: var(--marigold); text-wrap: balance; }
+.lede { color: var(--muted); margin: 0 0 16px; }
+.prompt { background: var(--night-2); border: 1px dashed var(--line); border-radius: 10px; padding: 14px 16px; min-height: 5.2em; font-style: italic; }
+.btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.btn {
+  appearance: none; border: 1px solid var(--line); background: var(--night-2); color: var(--bone);
+  font: inherit; font-weight: 600; padding: 10px 16px; border-radius: 8px; cursor: pointer;
+}
+.btn:hover { border-color: var(--marigold); }
+.btn.primary { background: var(--marigold); border-color: var(--marigold); color: #2a1500; }
+.btn.primary:hover { background: #ffb73d; }
+.btn.danger { color: #ff9db8; }
+
+form { display: grid; gap: 14px; min-width: 0; }
+.row2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+label { display: grid; gap: 6px; font-size: .85rem; color: var(--muted); font-weight: 500; min-width: 0; }
+input[type=text], textarea {
+  width: 100%; font: inherit; color: var(--bone); background: var(--night-2);
+  border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+}
+textarea { min-height: 120px; resize: vertical; }
+input[type=file] { font: inherit; color: var(--muted); max-width: 100%; }
+.hint { font-size: .8rem; color: var(--muted); margin: 0; }
+
+footer { margin-top: 48px; color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line); padding-top: 16px; }
+
+/* memory card */
+.scrim { position: fixed; inset: 0; z-index: 20; background: rgba(12,7,20,.86); display: grid; place-items: center; padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.card {
+  width: min(560px, 100%); max-height: 100%; overflow: auto; background: var(--night-2);
+  border: 1px solid var(--line); border-top: 6px solid var(--marigold); border-radius: 14px; padding: 24px;
+  display: grid; gap: 16px; min-width: 0;
+}
+.card-head { display: flex; gap: 18px; align-items: flex-start; }
+.card-head .frame { flex: 0 0 auto; width: 96px; height: 116px; border-radius: 48px 48px 8px 8px; }
+.card-head > div { min-width: 0; }
+.card h3 { font-family: var(--display); font-weight: 400; font-size: 1.9rem; line-height: 1.1; margin: 0; color: var(--marigold); overflow-wrap: anywhere; }
+.card .years { color: var(--muted); font-size: .9rem; margin: 4px 0 0; }
+.story { white-space: pre-wrap; margin: 0; overflow-wrap: anywhere; }
+.facts { display: grid; gap: 8px; margin: 0; }
+.facts div { display: grid; gap: 2px; }
+.facts dt { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--teal); }
+.facts dd { margin: 0; overflow-wrap: anywhere; }
+
+/* local AI */
+.ai-status { display: flex; align-items: flex-start; gap: 9px; margin: 14px 0 0; font-size: .85rem; color: var(--muted); max-width: 52ch; }
+.ai-status::before { content: ""; flex: 0 0 auto; width: 9px; height: 9px; margin-top: .45em; border-radius: 50%; background: var(--muted); }
+.ai-status[data-state="on"] { color: var(--bone); }
+.ai-status[data-state="on"]::before { background: var(--teal); box-shadow: 0 0 8px var(--teal); }
+.ai-status[data-state="warn"]::before { background: var(--marigold); }
+.ai-box { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.draft { background: var(--night-2); border: 1px solid var(--line); border-left: 4px solid var(--teal); border-radius: 10px; padding: 14px 16px; display: grid; gap: 10px; min-width: 0; }
+.draft p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+section.ask { margin-top: 56px; border-top: 1px solid var(--line); padding-top: 32px; display: grid; gap: 14px; max-width: 70ch; }
+.ask-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.ask-row input { flex: 1 1 240px; min-width: 0; }
+.answer { background: var(--night-2); border: 1px solid var(--line); border-left: 4px solid var(--marigold); border-radius: 10px; padding: 14px 16px; white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+
+/* life book */
+select { width: 100%; font: inherit; color: var(--bone); background: var(--night-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.btn.mini { padding: 6px 10px; font-size: .8rem; }
+section.book-sec { margin-top: 56px; border-top: 1px solid var(--line); padding-top: 32px; display: grid; gap: 18px; min-width: 0; }
+.book-controls { display: grid; gap: 18px; max-width: 70ch; min-width: 0; }
+.moment-list { display: grid; gap: 10px; }
+.moment { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 12px; align-items: center; background: var(--night-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px; min-width: 0; }
+.thumb { width: 64px; height: 64px; border-radius: 6px; overflow: hidden; background: var(--cloth); display: grid; place-items: center; font-family: var(--display); color: var(--marigold); }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.m-info { display: grid; gap: 2px; min-width: 0; }
+.m-info strong { overflow-wrap: anywhere; font-weight: 600; }
+.m-acts { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.moment-form { display: grid; gap: 14px; background: rgba(31, 20, 51, .6); border: 1px dashed var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+.moment-form h3 { font-family: var(--display); font-weight: 400; font-size: 1.3rem; margin: 0; color: var(--marigold); }
+.m-preview { max-width: 220px; border: 3px solid var(--marigold); border-radius: 8px; overflow: hidden; }
+.m-preview img { display: block; width: 100%; }
+.book { display: grid; gap: 24px; justify-items: center; margin-top: 8px; }
+.page {
+  --paper: #fffaf0; --ink: #2a2118; --soft: #6b5b47; --gold: #c8851a; --rose: #b3294f;
+  position: relative; width: min(420px, 100%); aspect-ratio: 148 / 210; background: var(--paper); color: var(--ink);
+  border-radius: 3px; box-shadow: 0 12px 34px rgba(0, 0, 0, .5); padding: 34px 30px 30px;
+  display: flex; flex-direction: column; gap: 12px; min-width: 0;
+  font-family: "Lora", "Noto Serif Devanagari", Georgia, serif;
+}
+.page::before { content: ""; position: absolute; inset: 10px; border: 1px solid var(--gold); opacity: .55; pointer-events: none; }
+.kicker { margin: 0; font: 600 .7rem var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+.cover { align-items: center; text-align: center; }
+.cover-frame { width: 56%; aspect-ratio: 3 / 4; margin-top: 6px; border: 4px solid var(--gold); border-radius: 999px 999px 8px 8px; overflow: hidden; background: #f1e6cf; display: grid; place-items: center; font: 400 3rem "Gloock", Georgia, serif; color: var(--gold); }
+.cover-frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.book-title { margin: 8px 0 0; font: 400 1.9rem/1.1 "Gloock", "Noto Serif Devanagari", Georgia, serif; color: var(--rose); overflow-wrap: anywhere; }
+.book-years { margin: 0; color: var(--soft); }
+.book-sub { margin: auto 0 0; color: var(--soft); font-style: italic; font-size: .9rem; }
+.pg-h { margin: 0; font: 400 1.4rem/1.15 "Gloock", "Noto Serif Devanagari", Georgia, serif; color: var(--rose); }
+.shot { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: contain; background: #efe3cb; border: 1px solid #e0d2b4; }
+.cap { margin: -4px 0 0; font-size: .78rem; color: var(--soft); font-style: italic; overflow-wrap: anywhere; }
+.meta { margin: 0; font: 600 .7rem var(--body); letter-spacing: .12em; text-transform: uppercase; color: var(--gold); }
+.pg-text { flex: 1 1 auto; min-height: 3em; font-size: .95rem; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.pg-text.tight { font-size: .85rem; line-height: 1.5; }
+.pg-text:empty::before { content: attr(data-ph); color: #8a7b66; font-style: italic; }
+.pg-text:focus { outline: 2px solid #3fb8a8; outline-offset: 4px; }
+.pg-facts { margin: 0; display: grid; gap: 10px; }
+.pg-facts dt { font: 600 .7rem var(--body); letter-spacing: .12em; text-transform: uppercase; color: var(--gold); }
+.pg-facts dd { margin: 2px 0 0; }
+@media (max-width: 720px) {
+  .moment { grid-template-columns: 64px minmax(0, 1fr); }
+  .m-acts { grid-column: 1 / -1; justify-content: flex-start; }
+}
+@media print {
+  @page { size: 148mm 210mm; margin: 0; }
+  html, body { background: #fff !important; }
+  body { padding: 0 !important; overflow: visible !important; }
+  #petals, .banner, header, footer, .altar, .legend, section.compose, section.ask, .scrim, .book-intro, .book-controls { display: none !important; }
+  .wrap { max-width: none !important; margin: 0 !important; }
+  section.book-sec { margin: 0 !important; padding: 0 !important; border: 0 !important; display: block !important; }
+  .book { display: block !important; margin: 0 !important; }
+  .page { width: 148mm !important; height: 209mm !important; aspect-ratio: auto !important; box-shadow: none !important; border-radius: 0 !important; padding: 15mm 14mm !important; overflow: hidden; break-after: page; page-break-after: always; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .page:last-child { break-after: auto; page-break-after: auto; }
+  .pg-text:empty::before { content: "" !important; }
+  .pg-text:focus { outline: none !important; }
+}
+
+@media (max-width: 720px) {
+  section.compose { grid-template-columns: minmax(0, 1fr); }
+  .shelf { width: 100% !important; }
+  .row2 { grid-template-columns: minmax(0, 1fr); }
+  .flag { width: 40px; height: 50px; }
+}
+@media (prefers-reduced-motion: reduce) { .flame { animation: none; } }
+</style>
+
+<canvas id="petals" aria-hidden="true"></canvas>
+
+<div class="wrap">
+  <div class="banner" id="banner" aria-hidden="true"></div>
+
+  <header>
+    <div>
+      <h1>Our Ofrenda</h1>
+      <p class="tagline">Light a candle. Tell their story. Keep them with us.</p>
+      <p class="ai-status" id="ai-status" data-state="off" aria-live="polite">Checking for the local model...</p>
+    </div>
+    <div class="dates">
+      <span><b>1 November</b> welcomes the little ones.</span>
+      <span><b>2 November</b> welcomes the grown-ups.</span>
+      <span>Marigold petals light the way home.</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="altar" id="altar" aria-label="Family altar"></div>
+    <p class="legend">Water for the thirsty &middot; salt &middot; pan de muerto &middot; their favorite food &middot; a candle for each of them</p>
+
+    <section class="compose" id="compose">
+      <div>
+        <h2 id="form-title">Light a new candle</h2>
+        <p class="lede">Add someone you miss. A photo, a few lines about them, the dish they cooked, the song they hummed.</p>
+        <div class="prompt" id="prompt" aria-live="polite"></div>
+        <div class="btn-row">
+          <button type="button" class="btn" id="next-prompt">Give me another question</button>
+        </div>
+      </div>
+
+      <form id="person-form" autocomplete="off">
+        <div class="row2">
+          <label for="f-name">Name
+            <input type="text" id="f-name" required maxlength="40" placeholder="Nani">
+          </label>
+          <label for="f-rel">Who they were to you
+            <input type="text" id="f-rel" maxlength="50" placeholder="Maternal grandmother">
+          </label>
+        </div>
+        <label for="f-years">Years
+          <input type="text" id="f-years" maxlength="30" placeholder="1941 &ndash; 2019">
+        </label>
+        <label for="f-story">Their story
+          <textarea id="f-story" maxlength="1500" placeholder="Write it the way you would tell it to a cousin who never met them."></textarea>
+        </label>
+        <div class="ai-box">
+          <button type="button" class="btn" id="draft-btn" disabled>Shape my notes into a story</button>
+          <span class="hint" id="draft-hint">Needs the local model. It only uses what you wrote.</span>
+        </div>
+        <div class="draft" id="draft-box" hidden>
+          <p id="draft-text"></p>
+          <p class="hint">Delete the "To add" line once you have answered it.</p>
+          <div class="btn-row">
+            <button type="button" class="btn primary" id="draft-use">Use this draft</button>
+            <button type="button" class="btn" id="draft-drop">Keep my notes</button>
+          </div>
+        </div>
+        <div class="row2">
+          <label for="f-food">Favorite food
+            <input type="text" id="f-food" maxlength="80" placeholder="Kheer with extra cardamom">
+          </label>
+          <label for="f-song">Their song
+            <input type="text" id="f-song" maxlength="80" placeholder="The song they hummed while cooking">
+          </label>
+        </div>
+        <label for="f-photo">Photo
+          <input type="file" id="f-photo" accept="image/*">
+        </label>
+        <p class="hint" id="photo-hint">The photo stays in this browser. It is shrunk before saving.</p>
+        <div class="btn-row">
+          <button type="submit" class="btn primary" id="f-submit">Light the candle</button>
+          <button type="button" class="btn" id="f-cancel" hidden>Cancel edit</button>
+        </div>
+      </form>
+    </section>
+    <section class="book-sec" id="book-sec">
+      <div class="book-intro">
+        <h2>Make their book</h2>
+        <p class="lede">Add photos of them doing the things they loved, and tell us about each one. The local model reads each photo and your notes, and writes a page for it using only what you tell it. Then you print the book or save it as a PDF. The pages are written about them by the family, never as them.</p>
+      </div>
+      <div class="book-controls" id="book-controls">
+        <div class="row2">
+          <label for="b-person">Whose book is this?
+            <select id="b-person"></select>
+          </label>
+          <label for="b-lang">Language of the pages
+            <select id="b-lang">
+              <option value="en">English</option>
+              <option value="hi">Hindi (हिन्दी)</option>
+            </select>
+          </label>
+        </div>
+        <div class="moment-list" id="moment-list"></div>
+        <form class="moment-form" id="moment-form" autocomplete="off">
+          <h3 id="m-title-h">Add a moment</h3>
+          <label for="m-photo">Photo
+            <input type="file" id="m-photo" accept="image/*">
+          </label>
+          <div class="m-preview" id="m-preview" hidden><img id="m-prev-img" alt="The photo you chose"></div>
+          <div class="row2">
+            <label for="m-title">What were they doing?
+              <input type="text" id="m-title" maxlength="80" placeholder="Planting the mango tree">
+            </label>
+            <label for="m-when">When
+              <input type="text" id="m-when" maxlength="30" placeholder="1974, or Summer of 1983">
+            </label>
+          </div>
+          <label for="m-where">Where
+            <input type="text" id="m-where" maxlength="60" placeholder="The old house in the village">
+          </label>
+          <label for="m-notes">Tell us about it
+            <textarea id="m-notes" maxlength="900" placeholder="Who was there? What happened? What did they say or do?"></textarea>
+          </label>
+          <label for="m-caption">Caption under the photo
+            <input type="text" id="m-caption" maxlength="120" placeholder="A short line printed under the photo">
+          </label>
+          <div class="ai-box">
+            <button type="button" class="btn" id="m-describe" disabled>Suggest a caption from the photo</button>
+            <span class="hint" id="m-hint">Needs the local model.</span>
+          </div>
+          <div class="btn-row">
+            <button type="submit" class="btn primary" id="m-submit">Add to the book</button>
+            <button type="button" class="btn" id="m-cancel" hidden>Cancel edit</button>
+          </div>
+        </form>
+        <label for="b-by">Made by (printed on the last page)
+          <input type="text" id="b-by" maxlength="60" placeholder="Our family">
+        </label>
+        <div class="btn-row">
+          <button type="button" class="btn primary" id="b-write" disabled>Write the book</button>
+          <button type="button" class="btn" id="b-rewrite" disabled>Rewrite all pages</button>
+          <button type="button" class="btn" id="b-print" disabled>Print or save as PDF</button>
+        </div>
+        <p class="hint" id="b-hint">Add at least one moment to start the book.</p>
+      </div>
+      <div class="book" id="book-view" aria-label="Book preview"></div>
+    </section>
+
+    <section class="ask" id="ask">
+      <h2>Ask the family archive</h2>
+      <p class="lede">Ask about someone, and the local model answers only from the stories you wrote down. If nobody recorded it, it says so.</p>
+      <form class="ask-row" id="ask-form" autocomplete="off">
+        <input type="text" id="ask-q" maxlength="300" placeholder="What did Nani cook for festivals?" aria-label="Question about your family">
+        <button type="submit" class="btn primary" id="ask-btn" disabled>Ask</button>
+      </form>
+      <p class="hint" id="ask-hint">Needs the local model. The three examples are not part of the archive.</p>
+      <p class="answer" id="ask-a" aria-live="polite" hidden></p>
+    </section>
+  </main>
+
+  <footer>
+    Everything on this page is saved in this browser only. The three people shown first are examples. Edit them or remove them and add your own. When the local model is on, your stories go to a model running on this computer and nowhere else.
+  </footer>
+</div>
+
+<div class="scrim" id="scrim" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="c-name" id="card">
+    <div class="card-head">
+      <div class="frame" id="c-frame"></div>
+      <div>
+        <h3 id="c-name"></h3>
+        <p class="years" id="c-sub"></p>
+      </div>
+    </div>
+    <p class="story" id="c-story"></p>
+    <dl class="facts" id="c-facts"></dl>
+    <label for="c-note">A note to them
+      <textarea id="c-note" maxlength="800" placeholder="Say what you never got to say. It saves as you type."></textarea>
+    </label>
+    <div class="btn-row">
+      <button type="button" class="btn" id="c-book">Make their book</button>
+      <button type="button" class="btn" id="c-edit">Edit</button>
+      <button type="button" class="btn danger" id="c-remove">Remove</button>
+      <button type="button" class="btn primary" id="c-close">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "ofrenda.v1";
+  var seed = [
+    { id: "s1", name: "Nani", rel: "Maternal grandmother", years: "Add the years",
+      story: "Example. Replace this with a real memory.\n\nWhat did her kitchen smell like on festival days? Who did she save the biggest portion for?",
+      food: "Kheer with too much cardamom", song: "The song she hummed while rolling rotis", photo: "", note: "", example: true },
+    { id: "s2", name: "Dadaji", rel: "Paternal grandfather", years: "Add the years",
+      story: "Example. Replace this with a real memory.\n\nWhere did he sit in the evenings? What did he say every time you left the house?",
+      food: "Hot jalebi on Sunday mornings", song: "An old radio ghazal", photo: "", note: "", example: true },
+    { id: "s3", name: "Bruno", rel: "Our first dog", years: "Add the years",
+      story: "Example. Pets belong on the altar too. Tell the story of the day he came home.",
+      food: "Stolen biscuits", song: "The sound of his collar on the stairs", photo: "", note: "", example: true }
+  ];
+  var prompts = [
+    "What did their kitchen smell like on festival days?",
+    "What was the first thing they said when you walked in the door?",
+    "Which story did they tell again and again, and how did it end?",
+    "What did they always carry in their pockets or bag?",
+    "What was their laugh like? Who laughs like that now?",
+    "What advice did they give you that you only understood later?",
+    "Which dish do you still try to cook the way they did?",
+    "What did they do on the day before a festival?",
+    "Where would they sit? Describe that spot.",
+    "What would you put on the altar just for them?"
+  ];
+  var colors = ["#e8457c", "#f5a524", "#3fb8a8", "#ff7a3d", "#b46bff", "#f5a524", "#e8457c", "#3fb8a8", "#ff7a3d", "#b46bff", "#f5a524", "#e8457c", "#3fb8a8", "#ff7a3d"];
+
+  var people = load();
+  var editingId = null;
+  var openId = null;
+  var lastTrigger = null;
+  var promptIdx = Math.floor(Math.random() * prompts.length);
+
+  function $(s) { return document.querySelector(s); }
+  function el(tag, attrs) {
+    var n = document.createElement(tag);
+    attrs = attrs || {};
+    Object.keys(attrs).forEach(function (k) {
+      if (k === "class") n.className = attrs[k];
+      else if (k === "text") n.textContent = attrs[k];
+      else n.setAttribute(k, attrs[k]);
+    });
+    for (var i = 2; i < arguments.length; i++) if (arguments[i]) n.append(arguments[i]);
+    return n;
+  }
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) { var d = JSON.parse(raw); if (Array.isArray(d)) return d; }
+    } catch (e) {}
+    return seed.map(function (p) { return Object.assign({}, p); });
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(people)); } catch (e) {} }
+  function initials(n) { return (n.trim()[0] || "?").toUpperCase(); }
+
+  // banner
+  var banner = $("#banner");
+  var flagCount = Math.min(14, Math.max(8, Math.floor((window.innerWidth - 32) / 60)));
+  for (var i = 0; i < flagCount; i++) {
+    var f = el("span", { class: "flag" });
+    f.style.setProperty("--c", colors[i % colors.length]);
+    banner.append(f);
+  }
+
+  function frameFor(p) {
+    var fr = el("span", { class: "frame" });
+    if (p.photo) { var im = el("img", { alt: "Photo of " + p.name, src: p.photo }); fr.append(im); }
+    else fr.textContent = initials(p.name);
+    return fr;
+  }
+
+  // altar
+  function render() {
+    var altar = $("#altar");
+    altar.textContent = "";
+    var sizes = [2, 3, 4], rows = [], idx = 0, r = 0;
+    while (idx < people.length) {
+      var n = r < sizes.length ? sizes[r] : 5;
+      rows.push(people.slice(idx, idx + n));
+      idx += n; r++;
+    }
+    if (!rows.length) {
+      altar.append(el("p", { class: "legend", text: "The altar is empty. Light the first candle below." }));
+      return;
+    }
+    var widths = ["46%", "68%", "100%"];
+    rows.forEach(function (row, ri) {
+      var shelf = el("div", { class: "shelf" });
+      shelf.style.setProperty("--w", ri < widths.length ? widths[ri] : "100%");
+      row.forEach(function (p, pi) {
+        var b = el("button", { class: "person", type: "button", "data-id": p.id, "aria-label": "Open the memory of " + p.name });
+        var candle = el("span", { class: "candle", "aria-hidden": "true" },
+          el("span", { class: "flame" }), el("span", { class: "wick" }), el("span", { class: "wax" }));
+        candle.firstChild.style.setProperty("--d", ((ri * 7 + pi * 3) % 11) * -0.37 + "s");
+        b.append(candle, frameFor(p), el("span", { class: "pname", text: p.name }));
+        if (p.rel) b.append(el("span", { class: "prel", text: p.rel }));
+        if (p.example) b.append(el("span", { class: "tag", text: "Example" }));
+        b.addEventListener("click", function () { lastTrigger = b; openCard(p.id); });
+        shelf.append(b);
+      });
+      altar.append(shelf);
+    });
+  }
+
+  // memory card
+  var scrim = $("#scrim");
+  function find(id) { for (var i = 0; i < people.length; i++) if (people[i].id === id) return people[i]; return null; }
+  function openCard(id) {
+    var p = find(id); if (!p) return;
+    openId = id;
+    var fr = $("#c-frame"); fr.textContent = "";
+    if (p.photo) fr.append(el("img", { alt: "Photo of " + p.name, src: p.photo })); else fr.textContent = initials(p.name);
+    $("#c-name").textContent = p.name;
+    $("#c-sub").textContent = [p.rel, p.years].filter(Boolean).join(" · ");
+    $("#c-story").textContent = p.story || "No story yet. Use Edit to add one.";
+    var facts = $("#c-facts"); facts.textContent = "";
+    if (p.food) facts.append(el("div", {}, el("dt", { text: "Favorite food" }), el("dd", { text: p.food })));
+    if (p.song) facts.append(el("div", {}, el("dt", { text: "Their song" }), el("dd", { text: p.song })));
+    $("#c-note").value = p.note || "";
+    var rm = $("#c-remove"); rm.textContent = "Remove"; rm.dataset.armed = "";
+    scrim.hidden = false;
+    $("#c-close").focus();
+  }
+  function closeCard() {
+    scrim.hidden = true; openId = null;
+    if (lastTrigger && document.body.contains(lastTrigger)) lastTrigger.focus();
+  }
+  $("#c-close").addEventListener("click", closeCard);
+  scrim.addEventListener("click", function (e) { if (e.target === scrim) closeCard(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !scrim.hidden) closeCard(); });
+
+  var noteTimer;
+  $("#c-note").addEventListener("input", function (e) {
+    var p = find(openId); if (!p) return;
+    p.note = e.target.value;
+    clearTimeout(noteTimer); noteTimer = setTimeout(save, 300);
+  });
+  $("#c-remove").addEventListener("click", function (e) {
+    var b = e.currentTarget;
+    if (b.dataset.armed !== "1") { b.dataset.armed = "1"; b.textContent = "Tap again to remove"; return; }
+    dropBook(openId);
+    people = people.filter(function (p) { return p.id !== openId; });
+    save(); lastTrigger = null; closeCard(); render();
+  });
+  $("#c-edit").addEventListener("click", function () {
+    var p = find(openId); if (!p) return;
+    startEdit(p); closeCard(); lastTrigger = null;
+    $("#compose").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  // form
+  var form = $("#person-form");
+  function startEdit(p) {
+    editingId = p.id;
+    $("#f-name").value = p.name; $("#f-rel").value = p.rel || ""; $("#f-years").value = p.years || "";
+    $("#f-story").value = p.story || ""; $("#f-food").value = p.food || ""; $("#f-song").value = p.song || "";
+    $("#f-photo").value = "";
+    $("#form-title").textContent = "Edit " + p.name;
+    $("#f-submit").textContent = "Save changes";
+    $("#f-cancel").hidden = false;
+    $("#photo-hint").textContent = p.photo ? "A photo is saved. Choose a new one only to replace it." : "The photo stays in this browser. It is shrunk before saving.";
+  }
+  function endEdit() {
+    editingId = null; form.reset();
+    $("#form-title").textContent = "Light a new candle";
+    $("#f-submit").textContent = "Light the candle";
+    $("#f-cancel").hidden = true;
+    $("#photo-hint").textContent = "The photo stays in this browser. It is shrunk before saving.";
+  }
+  $("#f-cancel").addEventListener("click", endEdit);
+
+  function shrink(file) {
+    return new Promise(function (resolve) {
+      var rd = new FileReader();
+      rd.onerror = function () { resolve(""); };
+      rd.onload = function () {
+        var img = new Image();
+        img.onerror = function () { resolve(""); };
+        img.onload = function () {
+          var max = 480, s = Math.min(1, max / Math.max(img.width, img.height));
+          var c = document.createElement("canvas");
+          c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          resolve(c.toDataURL("image/jpeg", 0.82));
+        };
+        img.src = rd.result;
+      };
+      rd.readAsDataURL(file);
+    });
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var name = $("#f-name").value.trim();
+    if (!name) return;
+    var file = $("#f-photo").files[0];
+    var done = function (photo) {
+      var data = {
+        name: name, rel: $("#f-rel").value.trim(), years: $("#f-years").value.trim(),
+        story: $("#f-story").value.trim(), food: $("#f-food").value.trim(), song: $("#f-song").value.trim()
+      };
+      if (editingId) {
+        var p = find(editingId);
+        if (p) { Object.assign(p, data); if (photo) p.photo = photo; p.example = false; }
+      } else {
+        people.push(Object.assign({ id: "p" + Date.now(), photo: photo || "", note: "", example: false }, data));
+      }
+      save(); endEdit(); render();
+      var last = document.querySelector(".altar");
+      if (last) last.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    if (file) shrink(file).then(done); else done("");
+  });
+
+  // prompts
+  function showPrompt() { $("#prompt").textContent = prompts[promptIdx]; }
+  $("#next-prompt").addEventListener("click", function () { promptIdx = (promptIdx + 1) % prompts.length; showPrompt(); });
+  showPrompt();
+
+  render();
+
+  // local AI: this page talks to server.py, which talks to Ollama on the same computer
+  var statusEl = $("#ai-status"), aiReady = false;
+  function setAI(state, text) { statusEl.dataset.state = state; statusEl.textContent = text; }
+  function syncAI() {
+    $("#draft-btn").disabled = !aiReady;
+    $("#ask-btn").disabled = !aiReady;
+    if (aiReady) {
+      $("#draft-hint").textContent = "Write a few rough lines above first. The model only uses what you wrote.";
+      $("#ask-hint").textContent = "Answers come only from the people you added. The three examples do not count.";
+    }
+  }
+  function api(path, body) {
+    var ctl = new AbortController();
+    var t = setTimeout(function () { ctl.abort(); }, 240000);
+    var opts = body
+      ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: ctl.signal }
+      : { signal: ctl.signal };
+    return fetch(path, opts)
+      .then(function (r) {
+        return r.json().then(function (d) {
+          if (!r.ok) throw new Error(d.error || "Something went wrong.");
+          return d;
+        });
+      })
+      .finally(function () { clearTimeout(t); });
+  }
+  api("/api/health").then(function (d) {
+    if (d.ollama && d.model_ready) { aiReady = true; setAI("on", "Local AI ready. " + d.model + " is running on this computer."); }
+    else if (d.ollama) setAI("warn", "Ollama is running, but " + d.model + " is not installed. Run: ollama pull " + d.model);
+    else setAI("warn", "The page server is running, but Ollama is not. Start it with: ollama serve");
+    syncAI();
+  }).catch(function () {
+    setAI("off", "Local AI is off. Run server.py on your computer and open http://localhost:8000 to switch it on.");
+    syncAI();
+  });
+
+  $("#draft-btn").addEventListener("click", function () {
+    var btn = this, hint = $("#draft-hint");
+    var name = $("#f-name").value.trim(), notes = $("#f-story").value.trim();
+    if (!name || notes.length < 12) { hint.textContent = "Add a name and a few lines of notes first. The model only uses what you write."; return; }
+    btn.disabled = true; btn.textContent = "Thinking..."; hint.textContent = "";
+    api("/api/story", {
+      name: name, rel: $("#f-rel").value.trim(), years: $("#f-years").value.trim(),
+      food: $("#f-food").value.trim(), song: $("#f-song").value.trim(), notes: notes
+    }).then(function (d) {
+      $("#draft-text").textContent = d.text; $("#draft-box").hidden = false;
+    }).catch(function (e) {
+      hint.textContent = e.message || "The model did not answer. Try again.";
+    }).finally(function () {
+      btn.textContent = "Shape my notes into a story"; btn.disabled = !aiReady;
+    });
+  });
+  $("#draft-use").addEventListener("click", function () {
+    $("#f-story").value = $("#draft-text").textContent.slice(0, 1500);
+    $("#draft-box").hidden = true;
+  });
+  $("#draft-drop").addEventListener("click", function () { $("#draft-box").hidden = true; });
+
+  $("#ask-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var q = $("#ask-q").value.trim(), out = $("#ask-a"), btn = $("#ask-btn");
+    if (!q || !aiReady) return;
+    var archive = people.filter(function (p) { return !p.example; }).map(function (p) {
+      return { name: p.name, rel: p.rel, years: p.years, story: p.story, food: p.food, song: p.song };
+    });
+    out.hidden = false;
+    if (!archive.length) { out.textContent = "Add at least one real person first. The three examples do not count."; return; }
+    btn.disabled = true; btn.textContent = "Thinking..."; out.textContent = "";
+    api("/api/ask", { question: q, people: archive }).then(function (d) {
+      out.textContent = d.text;
+    }).catch(function (err) {
+      out.textContent = err.message || "The model did not answer. Try again.";
+    }).finally(function () { btn.textContent = "Ask"; btn.disabled = !aiReady; });
+  });
+
+  // ---- life books: photos + notes become a printable memory book ----
+  var BKEY = "ofrenda.books.v1";
+  var books = {};
+  try {
+    var rawB = localStorage.getItem(BKEY);
+    if (rawB) { var dB = JSON.parse(rawB); if (dB && typeof dB === "object") books = dB; }
+  } catch (e) {}
+  function saveBooks() { try { localStorage.setItem(BKEY, JSON.stringify(books)); } catch (e) {} }
+  function bookOf(pid) {
+    if (!books[pid]) books[pid] = { lang: "en", by: "", foreword: "", moments: [] };
+    return books[pid];
+  }
+
+  // photos live in IndexedDB (bigger quota than localStorage); a memory cache keeps them for drawing
+  var photoCache = {};
+  var idbReady = new Promise(function (res) {
+    try {
+      var rq = indexedDB.open("ofrenda-photos", 1);
+      rq.onupgradeneeded = function () { rq.result.createObjectStore("p"); };
+      rq.onsuccess = function () { res(rq.result); };
+      rq.onerror = function () { res(null); };
+    } catch (e) { res(null); }
+  });
+  function idbOp(mode, fn) {
+    return idbReady.then(function (db) {
+      if (!db) return "";
+      return new Promise(function (res) {
+        try {
+          var tx = db.transaction("p", mode), rq = fn(tx.objectStore("p"));
+          tx.oncomplete = function () { res(rq && rq.result !== undefined ? rq.result : ""); };
+          tx.onerror = function () { res(""); };
+          tx.onabort = function () { res(""); };
+        } catch (e) { res(""); }
+      });
+    });
+  }
+  function putPhoto(id, url) { photoCache[id] = url; return idbOp("readwrite", function (st) { return st.put(url, id); }); }
+  function delPhoto(id) { delete photoCache[id]; return idbOp("readwrite", function (st) { return st["delete"](id); }); }
+  function loadPhotos(bk) {
+    return Promise.all(bk.moments.map(function (m) {
+      if (photoCache[m.id]) return null;
+      return idbOp("readonly", function (st) { return st.get(m.id); }).then(function (v) { if (v) photoCache[m.id] = v; });
+    }));
+  }
+  function dropBook(pid) {
+    var bk = books[pid]; if (!bk) return;
+    bk.moments.forEach(function (m) { delPhoto(m.id); });
+    delete books[pid]; saveBooks();
+  }
+
+  function loadImg(src) {
+    return new Promise(function (res) {
+      var im = new Image();
+      im.onload = function () { res(im); };
+      im.onerror = function () { res(null); };
+      im.src = src;
+    });
+  }
+  function toJpeg(im, max, q) {
+    var s = Math.min(1, max / Math.max(im.width, im.height)), c = document.createElement("canvas");
+    c.width = Math.round(im.width * s); c.height = Math.round(im.height * s);
+    var g = c.getContext("2d");
+    g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
+    g.drawImage(im, 0, 0, c.width, c.height);
+    return c.toDataURL("image/jpeg", q);
+  }
+  function prep(file, max, q) {
+    return new Promise(function (res) {
+      var rd = new FileReader();
+      rd.onerror = function () { res(""); };
+      rd.onload = function () { loadImg(rd.result).then(function (im) { res(im ? toJpeg(im, max, q) : ""); }); };
+      rd.readAsDataURL(file);
+    });
+  }
+  function downscale(url, max) { return loadImg(url).then(function (im) { return im ? toJpeg(im, max, 0.8) : ""; }); }
+
+  var L = {
+    en: {
+      title: function (n) { return "The Life of " + n; },
+      sub: "A life in photographs and family memories",
+      fore: "A note from the family", remember: "What we remember",
+      food: "Favorite food", song: "Their song", by: "Made by",
+      ph: "Click here to write this page.", fph: "Click here to write the opening note."
+    },
+    hi: {
+      title: function (n) { return n + " की कहानी"; },
+      sub: "तस्वीरों और परिवार की यादों में एक जीवन",
+      fore: "परिवार की ओर से", remember: "हमें जो याद है",
+      food: "पसंदीदा खाना", song: "उनका पसंदीदा गाना", by: "संकलन",
+      ph: "इस पन्ने को लिखने के लिए यहाँ क्लिक करें।", fph: "शुरुआती नोट लिखने के लिए यहाँ क्लिक करें।"
+    }
+  };
+  var canPrint = location.protocol === "file:" || location.hostname === "localhost" || location.hostname === "127.0.0.1";
+  var bsel = null, mEditing = null, pendingPhoto = "", pendingNew = false, writing = false;
+
+  function realYears(p) { return p.years && p.years !== "Add the years" ? p.years : ""; }
+  function personFor(p) {
+    return { name: p.name, rel: p.rel, years: realYears(p), food: p.food, song: p.song, story: p.example ? "" : p.story };
+  }
+
+  function syncBookPeople() {
+    var sel = $("#b-person"); sel.textContent = "";
+    people.forEach(function (p) { sel.append(el("option", { value: p.id, text: p.name + (p.example ? " (example)" : "") })); });
+    if (!people.length) { bsel = null; renderBookAll(); return; }
+    if (!bsel || !find(bsel)) {
+      var real = people.filter(function (p) { return !p.example; })[0];
+      bsel = (real || people[0]).id;
+    }
+    sel.value = bsel;
+    selectBook(bsel);
+  }
+  function selectBook(pid) {
+    bsel = pid; resetMomentForm();
+    var bk = bookOf(pid);
+    $("#b-lang").value = bk.lang; $("#b-by").value = bk.by || "";
+    renderBookAll();
+    loadPhotos(bk).then(function () { if (bsel === pid) renderBookAll(); });
+  }
+  function renderBookAll() { renderMoments(); renderBook(); syncBookUI(); }
+
+  function mini(label, aria, fn) {
+    var b = el("button", { class: "btn mini", type: "button", text: label, "aria-label": aria });
+    b.addEventListener("click", function () { fn(b); });
+    return b;
+  }
+  function renderMoments() {
+    var box = $("#moment-list"); box.textContent = "";
+    var p = bsel && find(bsel); if (!p) return;
+    var bk = bookOf(bsel);
+    if (!bk.moments.length) { box.append(el("p", { class: "hint", text: "No moments yet. Add the first photo below." })); return; }
+    bk.moments.forEach(function (m, i) {
+      var th = el("span", { class: "thumb" });
+      if (photoCache[m.id]) th.append(el("img", { alt: "", src: photoCache[m.id] })); else th.textContent = String(i + 1);
+      var info = el("div", { class: "m-info" },
+        el("strong", { text: m.title || "Untitled moment" }),
+        el("span", { class: "hint", text: [m.when, m.where].filter(Boolean).join(" · ") || "No date yet" }),
+        el("span", { class: "hint", text: m.text ? "Page written" : "Page not written yet" }));
+      var acts = el("div", { class: "m-acts" });
+      acts.append(
+        mini("Up", "Move this moment up", function () { if (i > 0) { bk.moments.splice(i - 1, 0, bk.moments.splice(i, 1)[0]); saveBooks(); renderBookAll(); } }),
+        mini("Down", "Move this moment down", function () { if (i < bk.moments.length - 1) { bk.moments.splice(i + 1, 0, bk.moments.splice(i, 1)[0]); saveBooks(); renderBookAll(); } }),
+        mini("Edit", "Edit this moment", function () { startMomentEdit(m); }),
+        mini("Remove", "Remove this moment", function (b) {
+          if (b.dataset.armed !== "1") { b.dataset.armed = "1"; b.textContent = "Tap again"; return; }
+          delPhoto(m.id); bk.moments.splice(i, 1); saveBooks(); renderBookAll();
+        }));
+      box.append(el("div", { class: "moment" }, th, info, acts));
+    });
+  }
+
+  function showPrev() {
+    var pv = $("#m-preview");
+    if (pendingPhoto) { $("#m-prev-img").src = pendingPhoto; pv.hidden = false; } else pv.hidden = true;
+  }
+  function resetMomentForm() {
+    mEditing = null; pendingPhoto = ""; pendingNew = false;
+    $("#moment-form").reset(); showPrev();
+    $("#m-title-h").textContent = "Add a moment"; $("#m-submit").textContent = "Add to the book"; $("#m-cancel").hidden = true;
+  }
+  function startMomentEdit(m) {
+    mEditing = m.id; pendingPhoto = photoCache[m.id] || ""; pendingNew = false;
+    $("#m-title").value = m.title || ""; $("#m-when").value = m.when || ""; $("#m-where").value = m.where || "";
+    $("#m-notes").value = m.notes || ""; $("#m-caption").value = m.caption || ""; $("#m-photo").value = "";
+    showPrev();
+    $("#m-title-h").textContent = "Edit this moment"; $("#m-submit").textContent = "Save changes"; $("#m-cancel").hidden = false;
+    $("#moment-form").scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+  $("#m-cancel").addEventListener("click", resetMomentForm);
+  $("#m-photo").addEventListener("change", function (e) {
+    var f = e.target.files[0]; if (!f) return;
+    prep(f, 1400, 0.85).then(function (url) {
+      if (!url) { $("#m-hint").textContent = "That file could not be read as a photo."; return; }
+      pendingPhoto = url; pendingNew = true; showPrev();
+    });
+  });
+  $("#moment-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!bsel) return;
+    var title = $("#m-title").value.trim(), notes = $("#m-notes").value.trim();
+    if (!title && !notes) { $("#m-hint").textContent = "Add what they were doing, or a few lines about it."; return; }
+    var bk = bookOf(bsel), m = null;
+    if (mEditing) bk.moments.forEach(function (x) { if (x.id === mEditing) m = x; });
+    if (!m) { m = { id: "m" + Date.now(), text: "" }; bk.moments.push(m); }
+    m.title = title; m.when = $("#m-when").value.trim(); m.where = $("#m-where").value.trim();
+    m.notes = notes; m.caption = $("#m-caption").value.trim();
+    if (pendingPhoto && pendingNew) putPhoto(m.id, pendingPhoto);
+    saveBooks(); resetMomentForm(); renderBookAll();
+  });
+
+  $("#m-describe").addEventListener("click", function () {
+    var btn = this, hint = $("#m-hint");
+    if (!pendingPhoto) { hint.textContent = "Choose a photo first."; return; }
+    btn.disabled = true; btn.textContent = "Looking..."; hint.textContent = "";
+    downscale(pendingPhoto, 768).then(function (small) {
+      return api("/api/describe", { image: small, lang: bookOf(bsel).lang });
+    }).then(function (d) {
+      var cap = $("#m-caption");
+      if (!cap.value.trim()) { cap.value = d.text.slice(0, 120); hint.textContent = "Suggested from what is visible. Check it and fix anything wrong."; }
+      else hint.textContent = "Suggestion: " + d.text;
+    }).catch(function (err) {
+      hint.textContent = err.message || "The model did not answer. Try again.";
+    }).finally(function () { btn.textContent = "Suggest a caption from the photo"; btn.disabled = !aiReady; });
+  });
+
+  // book preview: every page is editable text
+  function editable(text, ph, onChange) {
+    var d = el("div", { class: "pg-text", contenteditable: "true", "data-ph": ph, spellcheck: "true" });
+    d.textContent = text || "";
+    if ((text || "").length > 650) d.classList.add("tight");
+    var tm;
+    d.addEventListener("input", function () { clearTimeout(tm); tm = setTimeout(function () { onChange(d.innerText); }, 300); });
+    d.addEventListener("paste", function (e) {
+      e.preventDefault();
+      var tx = (e.clipboardData || window.clipboardData).getData("text");
+      document.execCommand("insertText", false, tx);
+    });
+    return d;
+  }
+  function renderBook() {
+    var v = $("#book-view"); v.textContent = "";
+    var p = bsel && find(bsel); if (!p) return;
+    var bk = bookOf(bsel), t = L[bk.lang] || L.en;
+    if (!bk.moments.length) return;
+
+    var cover = el("div", { class: "page cover" });
+    var fr = el("div", { class: "cover-frame" });
+    var coverImg = p.photo;
+    if (!coverImg) bk.moments.forEach(function (m) { if (!coverImg && photoCache[m.id]) coverImg = photoCache[m.id]; });
+    if (coverImg) fr.append(el("img", { alt: "", src: coverImg })); else fr.textContent = initials(p.name);
+    cover.append(
+      el("p", { class: "kicker", text: "Día de los Muertos " + new Date().getFullYear() }),
+      fr,
+      el("h3", { class: "book-title", text: t.title(p.name) }),
+      el("p", { class: "book-years", text: realYears(p) }),
+      el("p", { class: "book-sub", text: t.sub }));
+    v.append(cover);
+
+    var fore = el("div", { class: "page" }, el("p", { class: "kicker", text: t.fore }), el("h3", { class: "pg-h", text: p.name }));
+    fore.append(editable(bk.foreword, t.fph, function (x) { bk.foreword = x; saveBooks(); }));
+    v.append(fore);
+
+    bk.moments.forEach(function (m) {
+      var pg = el("div", { class: "page" });
+      if (photoCache[m.id]) pg.append(el("img", { class: "shot", alt: m.caption || m.title || "", src: photoCache[m.id] }));
+      if (m.caption) pg.append(el("p", { class: "cap", text: m.caption }));
+      var meta = [m.when, m.where].filter(Boolean).join(" · ");
+      if (meta) pg.append(el("p", { class: "meta", text: meta }));
+      if (m.title) pg.append(el("h4", { class: "pg-h", text: m.title }));
+      pg.append(editable(m.text, t.ph, function (x) { m.text = x; saveBooks(); }));
+      v.append(pg);
+    });
+
+    if (p.food || p.song || bk.by) {
+      var end = el("div", { class: "page" }, el("p", { class: "kicker", text: t.remember }));
+      var dl = el("dl", { class: "pg-facts" });
+      if (p.rel) dl.append(el("div", {}, el("dt", { text: p.name }), el("dd", { text: p.rel })));
+      if (p.food) dl.append(el("div", {}, el("dt", { text: t.food }), el("dd", { text: p.food })));
+      if (p.song) dl.append(el("div", {}, el("dt", { text: t.song }), el("dd", { text: p.song })));
+      end.append(dl);
+      if (bk.by) end.append(el("p", { class: "book-sub", text: t.by + ": " + bk.by }));
+      v.append(end);
+    }
+  }
+
+  function syncBookUI() {
+    var n = bsel ? bookOf(bsel).moments.length : 0;
+    $("#m-describe").disabled = !aiReady;
+    $("#b-write").disabled = !aiReady || !n || writing;
+    $("#b-rewrite").disabled = !aiReady || !n || writing;
+    $("#b-print").disabled = !canPrint || !n;
+    if (aiReady) $("#m-hint").textContent = "A suggestion only describes what is visible. Check it before you keep it.";
+    if (writing) return;
+    var h = $("#b-hint");
+    if (!n) h.textContent = "Add at least one moment to start the book.";
+    else {
+      var parts = [];
+      if (!aiReady) parts.push("The model is off, so click any page in the preview to write it yourself.");
+      if (!canPrint) parts.push("To print or save a PDF, open the localhost version or the downloaded file.");
+      else parts.push("In the print window choose Save as PDF, set margins to None and turn on background graphics.");
+      h.textContent = parts.join(" ");
+    }
+  }
+
+  function writeBook() {
+    if (writing || !aiReady || !bsel) return;
+    var pid = bsel, p = find(pid), bk = bookOf(pid), hint = $("#b-hint"), jobs = [];
+    if (!bk.foreword.trim()) jobs.push({ kind: "foreword" });
+    bk.moments.forEach(function (m) { if (!(m.text || "").trim()) jobs.push({ kind: "moment", m: m }); });
+    if (!jobs.length) { hint.textContent = "Every page already has text. Use Rewrite all pages to start over."; return; }
+    writing = true; syncBookUI();
+    var i = 0;
+    (function next() {
+      if (i >= jobs.length) { writing = false; syncBookUI(); hint.textContent = "Done. Read every page, fix anything that is wrong, then print."; return; }
+      var job = jobs[i++];
+      hint.textContent = "Writing " + i + " of " + jobs.length + "...";
+      var req = job.kind === "foreword"
+        ? api("/api/foreword", { person: personFor(p), moments: bk.moments.map(function (m) { return { title: m.title, when: m.when }; }), lang: bk.lang })
+        : api("/api/chapter", { person: personFor(p), moment: { title: job.m.title, when: job.m.when, where: job.m.where, caption: job.m.caption, notes: job.m.notes }, lang: bk.lang });
+      req.then(function (d) {
+        if (job.kind === "foreword") bk.foreword = d.text; else job.m.text = d.text;
+        saveBooks();
+        if (bsel === pid) { renderMoments(); renderBook(); }
+        next();
+      }).catch(function (err) {
+        writing = false; syncBookUI();
+        hint.textContent = (err.message || "The model did not answer.") + " Pages written so far are saved.";
+      });
+    })();
+  }
+  $("#b-write").addEventListener("click", writeBook);
+  $("#b-rewrite").addEventListener("click", function () {
+    var b = this;
+    if (b.dataset.armed !== "1") { b.dataset.armed = "1"; b.textContent = "Tap again to replace all pages"; return; }
+    b.dataset.armed = ""; b.textContent = "Rewrite all pages";
+    var bk = bookOf(bsel); bk.foreword = ""; bk.moments.forEach(function (m) { m.text = ""; });
+    saveBooks(); renderBookAll(); writeBook();
+  });
+  $("#b-rewrite").addEventListener("blur", function () { this.dataset.armed = ""; this.textContent = "Rewrite all pages"; });
+  $("#b-print").addEventListener("click", function () { window.print(); });
+
+  $("#b-person").addEventListener("change", function (e) { selectBook(e.target.value); });
+  $("#b-lang").addEventListener("change", function (e) {
+    if (!bsel) return;
+    bookOf(bsel).lang = e.target.value; saveBooks(); renderBook();
+    $("#b-hint").textContent = "Pages already written keep their language. Use Rewrite all pages to redo them in the new one.";
+  });
+  var byTimer;
+  $("#b-by").addEventListener("input", function (e) {
+    var v = e.target.value; clearTimeout(byTimer);
+    byTimer = setTimeout(function () { if (bsel) { bookOf(bsel).by = v.trim(); saveBooks(); renderBook(); } }, 300);
+  });
+  $("#c-book").addEventListener("click", function () {
+    var id = openId; lastTrigger = null; closeCard();
+    if (!id) return;
+    bsel = id; $("#b-person").value = id; selectBook(id);
+    $("#book-sec").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  // keep the book in step with the altar and with the model status
+  var baseRender = render;
+  render = function () { baseRender(); syncBookPeople(); };
+  var baseSync = syncAI;
+  syncAI = function () { baseSync(); syncBookUI(); };
+  syncBookPeople();
+
+  // falling marigold petals
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var cv = $("#petals"), cx = cv.getContext("2d"), W = 0, H = 0, ps = [];
+  function size() { W = cv.width = window.innerWidth; H = cv.height = window.innerHeight; }
+  size(); window.addEventListener("resize", size);
+  if (!reduce) {
+    for (var k = 0; k < 26; k++) ps.push({
+      x: Math.random() * W, y: Math.random() * H, r: 4 + Math.random() * 5,
+      vy: 0.25 + Math.random() * 0.45, vx: -0.15 + Math.random() * 0.3,
+      a: Math.random() * 6.28, va: (Math.random() - 0.5) * 0.02,
+      c: Math.random() < 0.7 ? "245,165,36" : "255,122,61", o: 0.25 + Math.random() * 0.3
+    });
+    (function tick() {
+      cx.clearRect(0, 0, W, H);
+      for (var j = 0; j < ps.length; j++) {
+        var p = ps[j];
+        p.y += p.vy; p.x += p.vx + Math.sin(p.a) * 0.3; p.a += p.va;
+        if (p.y > H + 10) { p.y = -10; p.x = Math.random() * W; }
+        cx.save(); cx.translate(p.x, p.y); cx.rotate(p.a);
+        cx.fillStyle = "rgba(" + p.c + "," + p.o + ")";
+        cx.beginPath(); cx.ellipse(0, 0, p.r, p.r * 0.55, 0, 0, 6.2832); cx.fill();
+        cx.restore();
+      }
+      requestAnimationFrame(tick);
+    })();
+  }
+})();
+</script>
